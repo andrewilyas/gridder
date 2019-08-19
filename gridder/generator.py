@@ -14,11 +14,10 @@ tmux send-keys -t {0}:0 "{1}" Enter
 """
 
 RUNNER = "gridder-run --num-gpus {gpus_per_job} --gpu-lim {max_jobs_per_gpu}  \
-            --config {config} --proj-url {proj_url} \
-            --main-file {path_to_main} --clone-type {use_git}"
+        --config {config} --proj-url {proj_url} --main-file {path_to_main}"
 
 RUNNER_KEYS = ["gpus_per_job", "max_jobs_per_gpu", "config", 
-                                "proj_url", "path_to_main", "use_git"]
+                    "proj_url", "path_to_main"]
 
 DELETE_ALL_JOBS = """
 rm -f {0}

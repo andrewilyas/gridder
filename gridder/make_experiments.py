@@ -5,17 +5,18 @@ import subprocess
 import json
 import argparse
 from importlib.util import spec_from_file_location, module_from_spec
+import uuid
 
 def main():
     parser = argparse.ArgumentParser(description='Generate experiments to be run.')
-    parser.add_argument('-b', '--base-config-path', type=str)
+    parser.add_argument('-b', '--base-config', type=str)
     parser.add_argument('-o', '--out-dir', type=str, required=True)
-    parser.add_argument('-e', '--experiment-config-path', type=str, required=True)
+    parser.add_argument('-e', '--experiment-config', type=str, required=True)
     parser.add_argument('-r', '--run', action='store_true')
     parser.add_argument('-p', '--session-prefix', type=str, default='sess')
     args = parser.parse_args()
 
-    spec = spec_from_file_location("config", args.experiment_config_path)
+    spec = spec_from_file_location("config", args.experiment_config)
     config = module_from_spec(spec)
     spec.loader.exec_module(config)
 
@@ -25,23 +26,21 @@ def main():
                                 To generate an example experimental config file with comments, \
                                 run 'gridder-gen-config'.")
 
-    if args.base_config_path:
-        base = json.load(open(args.base_config_path))
-    else:
-        base = {}
+    base = json.load(open(args.base_config)) if args.base_config else {}
     base['out_dir'] = args.out_dir
 
-    gen_kwargs = {
-        'rules':config.RULES
-    }
+    tmp_path = f"/tmp/{str(uuid.uuid4())}"
+    if config.LOCATION_IS_GIT:
+        Repo.clone_from(config.PROJECT_LOCATION, tmp_path)
+    else:
+        shutil.copytree(config.PROJECT_LOCATION, tmp_path)
 
-    csv_path = generate_experiments(base, config.PARAMS, args.out_dir, **gen_kwargs)
+    csv_path = generate_experiments(base, config.PARAMS, args.out_dir, rules=config.RULES)
     runner_args = {
         'gpus_per_job': config.GPUS_PER_JOB, 
         'max_jobs_per_gpu': config.MAX_JOBS_PER_GPU,
-        'proj_url': config.PROJECT_LOCATION,
+        'proj_url': tmp_path,
         'path_to_main': config.PATH_TO_MAIN,
-        'use_git': ('git' if config.LOCATION_IS_GIT else 'fs')
     }
     job_str, cleanup_str = consolidate_experiment(csv_path, config.NUM_SESSIONS,
                                 runner_args, prefix=args.session_prefix)
