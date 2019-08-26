@@ -1,4 +1,5 @@
 from .generator import generate_experiments, PATH_KEY, consolidate_experiment
+import shutil
 import os
 import tempfile
 import subprocess
