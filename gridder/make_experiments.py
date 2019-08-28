@@ -6,6 +6,7 @@ import json
 import argparse
 from importlib.util import spec_from_file_location, module_from_spec
 import uuid
+from git import Repo
 
 def main():
     parser = argparse.ArgumentParser(description='Generate experiments to be run.')
